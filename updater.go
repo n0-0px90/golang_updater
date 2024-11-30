@@ -27,6 +27,30 @@ const (
 	goURL string = "https://go.dev/dl/"
 )
 
+func delete_current_install(extraction_destination string) {
+	path_exists, path_error := os.Stat(extraction_destination)
+	if path_error != nil {
+		return
+	}
+	switch path_exists {
+	default:
+		os.RemoveAll(extraction_destination + "go")
+	}
+}
+
+func delete_tarball(user_download_directory string) {
+	directory_listing, dir_error := os.ReadDir(user_download_directory)
+	re := regexp.MustCompile(`go(\d{1,2}\.){1,3}.*`)
+	if dir_error != nil {
+		log.Fatalf("Failed to read directory: %q\n", dir_error)
+	}
+	for _, file := range directory_listing {
+		if re.FindString(file.Name()) != "" {
+			os.Remove(user_download_directory + file.Name())
+		}
+	}
+}
+
 // Untar file source string -> target. Returns err if fail
 func extract_tar(source, target string) error {
 	reader, open_err := os.Open(source)
@@ -133,6 +157,7 @@ func golang_website_langver(htmlWebPage *goquery.Document) string {
 }
 
 func extract_and_cleanup(download_location, user_download_directory, download_ver, extraction_destination string) {
+	delete_current_install(extraction_destination)
 	decompress_err := decompress_gzip(download_location, user_download_directory+download_ver+".linux-amd64.tar")
 	if decompress_err != nil {
 		log.Fatalf("Failed to decompress: %q\n", decompress_err)
@@ -141,8 +166,9 @@ func extract_and_cleanup(download_location, user_download_directory, download_ve
 	if extraction_err != nil {
 		log.Fatalf("Failed to extract: %q\n", extraction_err)
 	}
+	delete_tarball(user_download_directory)
 	fmt.Printf("Extracted to %s\n", extraction_destination)
-	fmt.Printf("Double check your path statement, verify its pointing to %s/go/bin\n", extraction_destination)
+	fmt.Printf("Double check your path statement, verify its pointing to %sgo/bin\n", extraction_destination)
 }
 
 // Download from new web request
@@ -192,12 +218,12 @@ func golang_download(download_ver string) {
 	switch strings.ToLower(choice) {
 	case "yes\n":
 		if current_user.Uid != "0" {
-			extraction_destination = user_home + "/.local/."
+			extraction_destination = user_home + "/.local/"
 			fmt.Printf("Extracting %s to %s\n", linux_download, extraction_destination)
 			extract_and_cleanup(download_location, user_download_directory, download_ver, extraction_destination)
 		} else {
-			extraction_destination = "/usr/local/."
-			fmt.Printf("Extracting %s to /usr/local/.\n", linux_download)
+			extraction_destination = "/usr/local/"
+			fmt.Printf("Extracting %s to /usr/local/\n", linux_download)
 			extract_and_cleanup(download_location, user_download_directory, download_ver, extraction_destination)
 		}
 	case "no\n":
@@ -229,7 +255,6 @@ func update_golang(goVer string) {
 	var goWebsiteVersion string = golang_website_langver(htmlWebPage)
 	if goWebsiteVersion == goVer {
 		fmt.Println("Your current version is up to date.")
-		golang_download(goWebsiteVersion)
 		return
 	}
 
@@ -242,8 +267,21 @@ func main() {
 	goCurrentVersion, goNotFound := exec.Command("go", "version").Output()
 
 	if goNotFound != nil {
-		fmt.Println("Read and install GoLang manually first.\nIf you have installed it, fix your path.")
-		log.Fatal(goNotFound)
+		fmt.Println("Verify you have added your /go/bin instance to your path. Would you like to install now?")
+		user_choice := bufio.NewReader(os.Stdin)
+		fmt.Printf("Yes or No?: ")
+		choice, err := user_choice.ReadString('\n')
+		if err != nil {
+			log.Fatal(err)
+		}
+		switch strings.ToLower(choice) {
+		case "yes\n":
+			fmt.Printf("\nInstalling GoLang")
+			update_golang("nil")
+		default:
+			fmt.Println("Goodbye!")
+		}
+
 	}
 
 	goVer := strings.Split(string(goCurrentVersion), " ")
