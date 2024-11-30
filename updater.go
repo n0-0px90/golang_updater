@@ -104,7 +104,7 @@ func golang_download(download_ver string) {
 }
 
 func update_golang(goVer string) {
-	fmt.Println("Checking", goURL, "for current version")
+	fmt.Println("Checking", goURL, "for new version")
 	resp, err := http.Get(goURL)
 	if err != nil {
 		log.Fatal(err)
