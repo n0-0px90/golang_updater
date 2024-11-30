@@ -1,9 +1,5 @@
 package main
 
-//NOTE: decompress_gzip and extract_tar came from golangdocs.com/tar-gzip-in-golang
-//TODO: Write recursive delete function for uneeded directories, and clean up tarball download
-//TODO: Write
-
 import (
 	"archive/tar"
 	"bufio"
