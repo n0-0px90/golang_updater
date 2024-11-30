@@ -274,8 +274,10 @@ func main() {
 		case "yes\n":
 			fmt.Printf("\nInstalling GoLang")
 			update_golang("nil")
+			os.Exit(1)
 		default:
 			fmt.Println("Goodbye!")
+			os.Exit(-127)
 		}
 
 	}
