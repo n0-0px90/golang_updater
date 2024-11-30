@@ -1,5 +1,11 @@
 package main
 
+//TODO: Write extraction function for tarballs
+//TODO: Write recursive delete function for uneeded directories
+//TODO: Write switch case for if user is root
+//TODO: Write switch case for if user installs local
+//TODO: Write
+
 import (
 	"bufio"
 	"fmt"
@@ -51,14 +57,6 @@ func golang_website_langver(htmlWebPage *goquery.Document) string {
 	return matches[0]
 }
 
-func extract_file(download_location *string) {
-	_, err := exec.Command("sudo", "rm -rf /usr/local/go && tar -C /usr/local -xzf %s", *download_location).Output()
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("Successfully installed GoLang to /usr/local/go.")
-}
-
 func golang_download(download_ver string) {
 	linux_download := download_ver + ".linux-amd64.tar.gz"
 	download_location := get_user_directory() + linux_download
@@ -93,13 +91,15 @@ func golang_download(download_ver string) {
 	if err != nil {
 		log.Fatalf("How did you do this? %q\n", err)
 	}
+	fmt.Println(choice)
 	switch strings.ToLower(choice) {
-	case "yes":
-		extract_file(&download_location)
-	case "no":
+	case "yes\n":
+		fmt.Println("Just kidding, this isn't implemented yet.")
+	case "no\n":
 		fmt.Println("Goodbye.")
 	default:
 		fmt.Println("Gonna take that as a no. Goodbye!")
+
 	}
 }
 
@@ -123,7 +123,6 @@ func update_golang(goVer string) {
 	var goWebsiteVersion string = golang_website_langver(htmlWebPage)
 	if goWebsiteVersion == goVer {
 		fmt.Println("Your current version is up to date.")
-		golang_download(goWebsiteVersion)
 		return
 	}
 
