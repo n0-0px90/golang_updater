@@ -8,6 +8,7 @@ import (
 	"archive/tar"
 	"bufio"
 	"compress/gzip"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -97,6 +98,12 @@ func get_user_directory() (string, string) {
 		log.Fatalf("I dont know how this happened: %q\n", err)
 	}
 	user_download_folder := dirname + "/Downloads/"
+	if _, err := os.Stat(user_download_folder); errors.Is(err, os.ErrNotExist) {
+		err := os.Mkdir(user_download_folder, 0755)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 	return user_download_folder, dirname
 }
 
@@ -170,7 +177,7 @@ func golang_download(download_ver string) {
 	}
 
 	fmt.Printf("Downloaded %s to %s!\n", linux_download, download_location)
-	fmt.Println("Would you like to extract and install according to GoLang documentation?")
+	fmt.Println("Would you like to extract and install now?")
 	fmt.Printf("Options: Yes or No\n")
 	user_choice := bufio.NewReader(os.Stdin)
 	choice, err := user_choice.ReadString('\n')
@@ -194,7 +201,7 @@ func golang_download(download_ver string) {
 			extract_and_cleanup(download_location, user_download_directory, download_ver, extraction_destination)
 		}
 	case "no\n":
-		fmt.Println("Goodbye.")
+		fmt.Printf("GoLang download is sitting at: %s\n", download_location)
 	default:
 		fmt.Println("Gonna take that as a no. Goodbye!")
 
