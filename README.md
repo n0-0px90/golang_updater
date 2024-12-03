@@ -1,3 +1,5 @@
 # golang_updater
-This is a simple program that updates GoLang.  
-It will not do an initial install for you, as there is documentation there worth reading.  
+This is a simple program that installs and updates GoLang.  
+Written in Go, installs to /usr/local/. as root, following documentation.  
+If ran as user, will install to $HOME/.local/.  
+
