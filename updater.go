@@ -48,67 +48,75 @@ func delete_tarball(user_download_directory string) {
 }
 
 // Untar file source string -> target. Returns err if fail
-func extract_tar(source, target string) error {
+func extract_tar(source, target string) {
 	reader, open_err := os.Open(source)
 	if open_err != nil {
-		return open_err
+		log.Fatal(open_err)
 	}
 	defer reader.Close()
 	tarReader := tar.NewReader(reader)
-	for {
+	defer func() {
+		for {
 
-		header, tar_err := tarReader.Next()
-		if tar_err == io.EOF {
-			break
-		} else if tar_err != nil {
-			return tar_err
-		}
-
-		path := filepath.Join(target, header.Name)
-		info := header.FileInfo()
-		if info.IsDir() {
-			if tar_err = os.MkdirAll(path, info.Mode()); tar_err != nil {
-				return tar_err
+			header, tar_err := tarReader.Next()
+			if tar_err == io.EOF {
+				break
+			} else if tar_err != nil {
+				log.Fatal(tar_err)
 			}
-			continue
-		}
 
-		WriteFile, wf_err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, info.Mode())
-		if wf_err != nil {
-			return wf_err
-		}
-		defer WriteFile.Close()
+			path := filepath.Join(target, header.Name)
+			info := header.FileInfo()
+			if info.IsDir() {
+				if tar_err = os.MkdirAll(path, info.Mode()); tar_err != nil {
+					log.Fatal(tar_err)
+				}
+				continue
+			}
 
-		_, copy_err := io.Copy(WriteFile, tarReader)
-		if copy_err != nil {
-			return copy_err
+			WriteFile, wf_err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, info.Mode())
+			if wf_err != nil {
+				log.Fatal(wf_err)
+			}
+
+			_, copy_err := io.Copy(WriteFile, tarReader)
+			if copy_err != nil {
+				log.Fatal(copy_err)
+			}
+			if close_err := WriteFile.Close(); close_err != nil {
+				log.Fatal(close_err)
+			}
 		}
-	}
-	return nil
+	}()
 }
 
 // Decompress source to target, returns err if fail
-func decompress_gzip(source, target string) error {
-	reader, open_err := os.Open(source)
-	if open_err != nil {
-		return open_err
-	}
-	defer reader.Close()
+func decompress_gzip(source, target string) {
+	defer func() {
+		reader, open_err := os.Open(source)
+		if open_err != nil {
+			log.Fatal(open_err)
+		}
+		defer reader.Close()
 
-	archive, ext_err := gzip.NewReader(reader)
-	if ext_err != nil {
-		return ext_err
-	}
-	defer archive.Close()
+		archive, ext_err := gzip.NewReader(reader)
+		if ext_err != nil {
+			log.Fatal(ext_err)
+		}
+		defer archive.Close()
 
-	target = filepath.Join(target, archive.Name)
-	writer, write_err := os.Create(target)
-	if write_err != nil {
-		return write_err
-	}
-	defer writer.Close()
-	_, copy_error := io.Copy(writer, archive)
-	return copy_error
+		target = filepath.Join(target, archive.Name)
+		writer, write_err := os.Create(target)
+		if write_err != nil {
+			log.Fatal(write_err)
+		}
+		defer writer.Close()
+
+		_, copy_error := io.Copy(writer, archive)
+		if copy_error != nil {
+			log.Fatal(copy_error)
+		}
+	}()
 
 }
 
@@ -154,17 +162,15 @@ func golang_website_langver(htmlWebPage *goquery.Document) string {
 
 func extract_and_cleanup(download_location, user_download_directory, download_ver, extraction_destination string) {
 	delete_current_install(extraction_destination)
-	decompress_err := decompress_gzip(download_location, user_download_directory+download_ver+".linux-amd64.tar")
-	if decompress_err != nil {
-		log.Fatalf("Failed to decompress: %q\n", decompress_err)
-	}
-	extraction_err := extract_tar(user_download_directory+download_ver+".linux-amd64.tar", extraction_destination)
-	if extraction_err != nil {
-		log.Fatalf("Failed to extract: %q\n", extraction_err)
-	}
+
+	decompress_gzip(download_location, user_download_directory+download_ver+".linux-amd64.tar")
+
+	extract_tar(user_download_directory+download_ver+".linux-amd64.tar", extraction_destination)
+
 	delete_tarball(user_download_directory)
 	fmt.Printf("Extracted to %s\n", extraction_destination)
 	fmt.Printf("Double check your path statement, verify its pointing to %sgo/bin\n", extraction_destination)
+	os.Exit(1)
 }
 
 // Download from new web request
@@ -248,7 +254,7 @@ func update_golang(goVer string) {
 		log.Fatal(err)
 	}
 
-	var goWebsiteVersion string = golang_website_langver(htmlWebPage)
+	goWebsiteVersion := golang_website_langver(htmlWebPage)
 	if goWebsiteVersion == goVer {
 		fmt.Println("Your current version is up to date.")
 		return
@@ -272,12 +278,12 @@ func main() {
 		}
 		switch strings.ToLower(choice) {
 		case "yes\n":
-			fmt.Printf("\nInstalling GoLang")
+			fmt.Printf("\nInstalling GoLang\n")
 			update_golang("nil")
 			os.Exit(1)
 		default:
 			fmt.Println("Goodbye!")
-			os.Exit(-127)
+			os.Exit(127)
 		}
 
 	}
