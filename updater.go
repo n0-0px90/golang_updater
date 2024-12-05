@@ -23,6 +23,10 @@ const (
 	goURL string = "https://go.dev/dl/"
 )
 
+//this is completely wrong looking at this now
+//TODO: Fix to stat poss. installed Go dir,
+//not TLDir. that makes no sense judas 
+//priest
 func delete_current_install(extraction_destination string) {
 	path_exists, path_error := os.Stat(extraction_destination)
 	if path_error != nil {
